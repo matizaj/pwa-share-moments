@@ -1,4 +1,7 @@
-﻿var ASSETS = [
+﻿const STATIC_CAHCE = "static3";
+const DYNAMIC_CAHCE = "dynamic2";
+
+var ASSETS = [
   "/",
   "/index.html",
   "/src/css/app.css",
@@ -15,13 +18,26 @@
 self.addEventListener("install", (e) => {
   console.log("[Service worker] install", e);
   e.waitUntil(
-    caches.open("static").then((cache) => {
+    caches.open(STATIC_CAHCE).then((cache) => {
       cache.addAll(ASSETS);
     })
   );
 });
 self.addEventListener("activate", (e) => {
   console.log("[Service worker] activated", e);
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== STATIC_CAHCE && key !== DYNAMIC_CAHCE) {
+            console.log("[Service Worker] Removing old cache", key);
+
+            return caches.delete(key);
+          }
+        })
+      );
+    })
+  );
   return self.clients.claim();
 });
 
@@ -33,7 +49,7 @@ self.addEventListener("fetch", (e) => {
       } else {
         return fetch(e.request).then((res) => {
           console.log("res", res);
-          caches.open("dynamic").then((cache) => {
+          caches.open(DYNAMIC_CAHCE).then((cache) => {
             cache.put(e.request.url, res.clone());
             return res;
           });
