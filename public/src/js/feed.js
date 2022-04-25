@@ -26,6 +26,12 @@ function closeCreatePostModal() {
   createPostArea.style.display = "none";
 }
 
+function clearCards() {
+  while (sharedMomentsArea.hasChildNodes()) {
+    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+  }
+}
+
 shareImageButton.addEventListener("click", openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener("click", closeCreatePostModal);
@@ -51,11 +57,33 @@ function createCard() {
   componentHandler.upgradeElement(cardWrapper);
   sharedMomentsArea.appendChild(cardWrapper);
 }
-
-fetch("https://httpbin.org/get")
+const url = "https://httpbin.org/get";
+let networkDataReceived = false;
+fetch(url)
   .then(function (res) {
     return res.json();
   })
   .then(function (data) {
-    createCard();
+    networkDataReceived = true;
+    console.log("data from web", data);
+    if (networkDataReceived) {
+      clearCards();
+      createCard();
+    }
   });
+if ("caches" in window) {
+  caches
+    .match(url)
+    .then((response) => {
+      if (response) {
+        return response.json();
+      }
+    })
+    .then((data) => {
+      console.log("data from cache", data);
+      if (!networkDataReceived) {
+        clearCards();
+        createCard();
+      }
+    });
+}
